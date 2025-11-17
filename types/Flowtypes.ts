@@ -11,6 +11,9 @@ export type OptionFlow = {
   created_at: string;
   has_sweep: boolean;
   all_opening_trades: boolean;
+  bid: number;
+  ask: number;
+  price_per_contract: number;
 };
 
 export const FILTERS = {

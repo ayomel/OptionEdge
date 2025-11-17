@@ -13,6 +13,7 @@ const FILTERS = {
   PREMIUM_BIG: "PREMIUM_BIG",
   ALL_OPENING_TRADES: "ALL_OPENING_TRADES",
   STOCK_ONLY: "STOCK_ONLY",
+  ABOVE_ASK: "ABOVE_ASK",
 };
 
 export default function Flow() {
@@ -121,17 +122,24 @@ export default function Flow() {
     }
 
     if (activeFilters.includes(FILTERS.ALL_OPENING_TRADES)) {
-      result
-      
-        = result.filter((flow) => flow.all_opening_trades);
+      result = result.filter((flow) => flow.all_opening_trades);
     }
 
     if (activeFilters.includes(FILTERS.STOCK_ONLY)) {
       result = result.filter((flow) => !isETF(flow.ticker));
     }
 
+    if (activeFilters.includes(FILTERS.ABOVE_ASK)) {
+      result = result.filter(
+        (flow) =>
+          flow.ask != null && flow.price != null && flow.price > flow.ask
+      );
+    }
+
     return result;
   }, [debounced, flows, activeFilters]);
+
+  console.log(flows);
 
   return (
     <div className="p-4">
@@ -199,6 +207,16 @@ export default function Flow() {
           }`}
         >
           Stock Only
+        </button>
+        <button
+          onClick={() => toggleFilter(FILTERS.ABOVE_ASK)}
+          className={`px-3 py-1 rounded-full text-xs font-medium border ${
+            activeFilters.includes(FILTERS.ABOVE_ASK)
+              ? "bg-pink-600 border-pink-500 text-white"
+              : "bg-[#2a2d35] border-gray-600 text-gray-300"
+          }`}
+        >
+          Above Ask
         </button>
       </div>
 
