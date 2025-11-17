@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { OptionFlowCard } from "./OptionFlowCard";
 import { useBreakpoint } from "@/hooks/useMediaQuery";
+import { createClient } from "@supabase/supabase-js";
 
 export type OptionFlow = {
   id: string;
@@ -18,23 +19,73 @@ export type OptionFlow = {
   has_sweep: boolean;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function Flow({ options = [] }: { options?: OptionFlow[], config?: any }) {
+export default function Flow({
+  options = [],
+  config,
+}: {
+  options?: OptionFlow[];
+  config: { supabaseUrl: string; supabaseAnonKey: string };
+}) {
+  const [flows, setFlows] = useState<OptionFlow[]>(options);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const { isLG } = useBreakpoint();
 
+  // Supabase client
+  const supabase = useMemo(
+    () => createClient(config.supabaseUrl, config.supabaseAnonKey),
+    [config]
+  );
+
+  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(search), 300);
     return () => clearTimeout(timer);
   }, [search]);
 
+  // Realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel("option_flows_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "option_flows",
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            setFlows((prev) => [payload.new as OptionFlow, ...prev]);
+          }
+
+          if (payload.eventType === "UPDATE") {
+            setFlows((prev) =>
+              prev.map((f) =>
+                f.id === payload.new.id ? (payload.new as OptionFlow) : f
+              )
+            );
+          }
+
+          if (payload.eventType === "DELETE") {
+            setFlows((prev) => prev.filter((f) => f.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase]);
+
+  // Filters
   const filtered = useMemo(() => {
-    if (!debounced.trim()) return options;
+    if (!debounced.trim()) return flows;
 
     const query = debounced.toLowerCase();
 
-    return options.filter((flow) => {
+    return flows.filter((flow) => {
       return (
         flow.ticker.toLowerCase().includes(query) ||
         flow.type.toLowerCase().includes(query) ||
@@ -43,11 +94,11 @@ export default function Flow({ options = [] }: { options?: OptionFlow[], config?
         String(flow.total_premium).includes(query)
       );
     });
-  }, [debounced, options]);
+  }, [debounced, flows]);
 
+  // Mobile view only
   return !isLG ? (
     <div className="p-4">
-      {/* Search Input */}
       <input
         type="text"
         className="w-full mb-4 px-3 py-2 rounded-lg bg-[#2a2d35] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500"
@@ -56,7 +107,6 @@ export default function Flow({ options = [] }: { options?: OptionFlow[], config?
         onChange={(e) => setSearch(e.target.value)}
       />
 
-      {/* Results */}
       {filtered.map((flow) => (
         <OptionFlowCard key={flow.id} flow={flow} />
       ))}
