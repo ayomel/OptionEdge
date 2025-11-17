@@ -1,9 +1,10 @@
 import { formatDate } from "@/utils/timeUtils/formatDate";
-import { OptionFlow } from "./Flow";
+import { formatPremium } from "@/utils/numberUtils/formatPremium";
+import { OptionFlow } from "@/types/Flowtypes";
 
 export function OptionFlowCard({ flow }: { flow: OptionFlow }) {
   const isCall = flow.type?.toLowerCase() === "call";
-  const premium = (flow.total_premium / 1000).toFixed(0) + "K";
+  const premium = formatPremium(flow.total_premium);
 
   return (
     <div className="w-full bg-[#1c1f26] rounded-xl p-4 mb-4 text-white shadow-sm">
@@ -33,7 +34,9 @@ export function OptionFlowCard({ flow }: { flow: OptionFlow }) {
       <div className="grid grid-cols-3 gap-y-3 text-gray-300 text-xs">
         <div>
           <div className="text-[10px] uppercase">Exp</div>
-          <div className="font-medium text-white">{formatDate(flow.expiry)}</div>
+          <div className="font-medium text-white">
+            {formatDate(flow.expiry)}
+          </div>
         </div>
 
         <div>
@@ -56,7 +59,7 @@ export function OptionFlowCard({ flow }: { flow: OptionFlow }) {
         <div>
           <div className="text-[10px] uppercase">Type</div>
           <div className="font-medium text-white">
-            {flow.has_sweep ? "S" : "—"}
+            {flow.has_sweep ? "S" : "B"}
           </div>
         </div>
 

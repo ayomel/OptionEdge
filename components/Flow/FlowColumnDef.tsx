@@ -1,4 +1,5 @@
 import { OptionFlow } from "@/types/Flowtypes";
+import { formatPremium } from "@/utils/numberUtils/formatPremium";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
@@ -38,8 +39,8 @@ export const useFlowColumns = () => {
         header: "Premium (K)",
         accessorKey: "total_premium",
         cell: (info) => {
-          const v = info.getValue<number>() / 1000;
-          return v.toFixed(0);
+          const val = info.getValue<number>();
+          return formatPremium(val);
         },
       },
       {
