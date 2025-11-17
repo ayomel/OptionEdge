@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { OptionFlowCard } from "./OptionFlowCard";
+import { useBreakpoint } from "@/hooks/useMediaQuery";
 
 export type OptionFlow = {
   id: string;
@@ -20,6 +21,7 @@ export type OptionFlow = {
 export default function Flow({ options = [] }: { options?: OptionFlow[] }) {
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
+  const { isLG } = useBreakpoint();
 
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(search), 300);
@@ -42,7 +44,7 @@ export default function Flow({ options = [] }: { options?: OptionFlow[] }) {
     });
   }, [debounced, options]);
 
-  return (
+  return !isLG ? (
     <div className="p-4">
       {/* Search Input */}
       <input
@@ -62,5 +64,7 @@ export default function Flow({ options = [] }: { options?: OptionFlow[] }) {
         <div className="text-center text-gray-400 mt-8">No results found.</div>
       )}
     </div>
+  ) : (
+    <div>No Desktop View just yet sorry :D</div>
   );
 }
