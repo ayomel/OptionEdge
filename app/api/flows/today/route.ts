@@ -18,9 +18,8 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
 
-    // pagination used by infinite scrolling
     const from = Number(searchParams.get("from") ?? 0);
-    const to = Number(searchParams.get("to") ?? 5000);
+    const to = Number(searchParams.get("to") ?? 1499);
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
