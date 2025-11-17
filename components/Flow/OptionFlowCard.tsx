@@ -1,6 +1,6 @@
 import { formatDate } from "@/utils/timeUtils/formatDate";
-import { OptionFlow } from "./Flow";
 import { formatPremium } from "@/utils/numberUtils/formatPremium";
+import { OptionFlow } from "@/types/Flowtypes";
 
 export function OptionFlowCard({ flow }: { flow: OptionFlow }) {
   const isCall = flow.type?.toLowerCase() === "call";
