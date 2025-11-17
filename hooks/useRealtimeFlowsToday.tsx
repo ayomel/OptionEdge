@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { OptionFlow } from "@/types/Flowtypes";
 import { useEffect } from "react";
-import type { OptionFlow } from "@/components/Flow/Flow";
 
 export default function useRealtimeFlowsToday(
   supabase: any,
