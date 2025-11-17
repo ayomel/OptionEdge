@@ -1,17 +1,15 @@
 "use client";
 
+import Flow from "@/components/Flow/Flow";
 import { SignIn, useUser } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
 
 export default function SignInPage() {
   const { isLoaded, isSignedIn } = useUser();
   if (!isLoaded) return null;
 
   if (isSignedIn) {
-    return (
-      <div className="flex items-center justify-center h-screen px-4">
-        <div className="text-xl font-semibold">Welcome!</div>
-      </div>
-    );
+    return redirect("/flow");
   }
 
   return (
