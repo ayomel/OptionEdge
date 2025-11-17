@@ -1,99 +1,79 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import useRealtimeFlowsToday from "@/hooks/useRealtimeFlowsToday";
 import { OptionFlowCard } from "./OptionFlowCard";
-
-export type OptionFlow = {
-  id: string;
-  ticker: string;
-  type: string;
-  strike: number;
-  expiry: string;
-  total_premium: number;
-  total_size: number;
-  price: number;
-  underlying_price: number;
-  created_at: string;
-  has_sweep: boolean;
-};
-
-const FILTERS = {
-  EXPIRING_SOON: "EXPIRING_SOON",
-  SWEEPS_ONLY: "SWEEPS_ONLY",
-  PREMIUM_BIG: "PREMIUM_BIG",
-};
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { OptionFlow } from "@/types/Flowtypes";
+import { FILTERS, PAGE_SIZE, PREFS_KEY } from "./constants";
+import { FilterKey, SortKey } from "@/types/Flowtypes";
+import { useFlowColumns } from "./FlowColumnDef";
+import SkeletonTableRow from "./SkeletonTableRow";
+import SkeletonCard from "./SkeletonCard";
+import { useLoadFlowPrefs } from "@/hooks/useLoadFlowPrefs";
+import { usePersistFlowPrefs } from "@/hooks/usePersistFlowPrefs";
+import { useInfiniteFlowFetch } from "@/hooks/useInfiniteFlowFetch";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function Flow() {
   const [flows, setFlows] = useState<OptionFlow[]>([]);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [activeFilters, setActiveFilters] = useState<FilterKey[]>([]);
+  const [sort, setSort] = useState<SortKey>("TIME_DESC");
   const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoaded, setInitialLoaded] = useState(false);
 
-  // 👇 Supabase client for realtime only
-  const supabase = useMemo(() => {
-    return createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-    );
-  }, []);
+  const supabase = useMemo(
+    () =>
+      createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+      ),
+    []
+  );
 
-  // 🔥 Realtime updates
   useRealtimeFlowsToday(supabase, setFlows);
+  useLoadFlowPrefs(PREFS_KEY, setSearch, setActiveFilters, setSort);
 
-  // 🔥 Load today's flows from your API route
-  useEffect(() => {
-    const fetchData = async () => {
-      const size = 1500;
-      const from = page * size;
-      const to = from + size - 1;
+  usePersistFlowPrefs(PREFS_KEY, search, activeFilters, sort);
 
-      const res = await fetch(`/api/flows/today?from=${from}&to=${to}`, {
-        cache: "no-store",
-      });
+  useInfiniteFlowFetch(
+    page,
+    PAGE_SIZE,
+    setFlows,
+    setHasMore,
+    setLoading,
+    setInitialLoaded
+  );
 
-      const json = await res.json();
-      if (json.success && json.data) {
-        setFlows((prev) => [...prev, ...json.data]); // append
-      }
-    };
+  useInfiniteScroll(hasMore, loading, setPage);
 
-    fetchData();
-  }, [page]);
+  useDebounce(search, 300, setDebounced);
 
-  // 🔥 Auto-load more (infinite scroll)
-  useEffect(() => {
-    const onScroll = () => {
-      if (
-        window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 400
-      ) {
-        setPage((p) => p + 1);
-      }
-    };
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // 🔥 Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(search), 300);
-    return () => clearTimeout(timer);
-  }, [search]);
-
-  // 🔥 Toggle pill filters
-  const toggleFilter = (f: string) => {
+  const toggleFilter = (f: FilterKey) => {
     setActiveFilters((prev) =>
-      prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]
+      prev.includes(f)
+        ? (prev.filter((x) => x !== f) as FilterKey[])
+        : [...prev, f]
     );
   };
 
-  // 🔥 Apply search + filters
+  const setSortKey = (key: SortKey) => setSort(key);
+
   const filtered = useMemo(() => {
     let result = [...flows];
 
+    // search
     if (debounced.trim()) {
       const q = debounced.toLowerCase();
       result = result.filter(
@@ -106,6 +86,7 @@ export default function Flow() {
       );
     }
 
+    // expiring soon
     if (activeFilters.includes(FILTERS.EXPIRING_SOON)) {
       const today = new Date();
       const twoWeeks = new Date();
@@ -117,20 +98,63 @@ export default function Flow() {
       });
     }
 
+    // sweeps only
     if (activeFilters.includes(FILTERS.SWEEPS_ONLY)) {
       result = result.filter((flow) => flow.has_sweep);
     }
 
+    // premium > 500k
     if (activeFilters.includes(FILTERS.PREMIUM_BIG)) {
       result = result.filter((flow) => flow.total_premium > 500_000);
     }
 
-    return result;
-  }, [debounced, flows, activeFilters]);
+    // unusual (custom)
+    if (activeFilters.includes(FILTERS.UNUSUAL)) {
+      result = result.filter(
+        (flow) =>
+          flow.has_sweep ||
+          flow.total_premium > 750_000 ||
+          flow.total_size > 1_000
+      );
+    }
+
+    // sorting
+    const sorted = [...result];
+    switch (sort) {
+      case "TIME_DESC":
+        sorted.sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        break;
+      case "PREMIUM_DESC":
+        sorted.sort((a, b) => b.total_premium - a.total_premium);
+        break;
+      case "SIZE_DESC":
+        sorted.sort((a, b) => b.total_size - a.total_size);
+        break;
+      case "EXPIRY_ASC":
+        sorted.sort(
+          (a, b) => new Date(a.expiry).getTime() - new Date(b.expiry).getTime()
+        );
+        break;
+      case "NONE":
+      default:
+        break;
+    }
+
+    return sorted;
+  }, [debounced, flows, activeFilters, sort]);
+
+  const table = useReactTable({
+    data: filtered,
+    columns: useFlowColumns(),
+    getCoreRowModel: getCoreRowModel(),
+  });
 
   return (
     <div className="p-4">
-      {/* SEARCH */}
+      {/* search */}
       <input
         type="text"
         className="w-full mb-4 px-3 py-2 rounded-lg bg-[#2a2d35] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500"
@@ -139,8 +163,8 @@ export default function Flow() {
         onChange={(e) => setSearch(e.target.value)}
       />
 
-      {/* PILL FILTERS */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      {/* filter pills */}
+      <div className="flex flex-wrap gap-2 mb-3">
         <button
           onClick={() => toggleFilter(FILTERS.EXPIRING_SOON)}
           className={`px-3 py-1 rounded-full text-xs font-medium border ${
@@ -173,18 +197,144 @@ export default function Flow() {
         >
           Premium &gt; 500K
         </button>
+
+        <button
+          onClick={() => toggleFilter(FILTERS.UNUSUAL)}
+          className={`px-3 py-1 rounded-full text-xs font-medium border ${
+            activeFilters.includes(FILTERS.UNUSUAL)
+              ? "bg-pink-600 border-pink-500 text-white"
+              : "bg-[#2a2d35] border-gray-600 text-gray-300"
+          }`}
+        >
+          Unusual
+        </button>
       </div>
 
-      {/* RESULTS */}
-      {filtered.map((flow) => (
-        <OptionFlowCard key={flow.id} flow={flow} />
-      ))}
+      {/* sort pills */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <button
+          onClick={() => setSortKey("TIME_DESC")}
+          className={`px-3 py-1 rounded-full text-xs border ${
+            sort === "TIME_DESC"
+              ? "bg-white text-black border-white"
+              : "bg-[#2a2d35] border-gray-600 text-gray-300"
+          }`}
+        >
+          Newest
+        </button>
+        <button
+          onClick={() => setSortKey("PREMIUM_DESC")}
+          className={`px-3 py-1 rounded-full text-xs border ${
+            sort === "PREMIUM_DESC"
+              ? "bg-white text-black border-white"
+              : "bg-[#2a2d35] border-gray-600 text-gray-300"
+          }`}
+        >
+          Premium
+        </button>
+        <button
+          onClick={() => setSortKey("SIZE_DESC")}
+          className={`px-3 py-1 rounded-full text-xs border ${
+            sort === "SIZE_DESC"
+              ? "bg-white text-black border-white"
+              : "bg-[#2a2d35] border-gray-600 text-gray-300"
+          }`}
+        >
+          Size
+        </button>
+        <button
+          onClick={() => setSortKey("EXPIRY_ASC")}
+          className={`px-3 py-1 rounded-full text-xs border ${
+            sort === "EXPIRY_ASC"
+              ? "bg_WHITE text-black border-white".toLowerCase()
+              : "bg-[#2a2d35] border-gray-600 text-gray-300"
+          }`}
+        >
+          Nearest Expiry
+        </button>
+      </div>
 
-      {filtered.length === 0 && (
+      {/* initial skeletons */}
+      {!initialLoaded && loading && (
+        <>
+          <div className="md:hidden">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <SkeletonCard key={idx} />
+            ))}
+          </div>
+          <div className="hidden md:block">
+            <table className="min-w-full text-xs text-gray-200">
+              <tbody>
+                {Array.from({ length: 8 }).map((_, idx) => (
+                  <SkeletonTableRow key={idx} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {initialLoaded && filtered.length === 0 && !loading && (
         <div className="text-center text-gray-400 mt-8">No results found.</div>
       )}
 
-      <div className="text-center text-gray-500 mt-4 pb-8">Loading more...</div>
+      {/* mobile cards */}
+      <div className="md:hidden">
+        {filtered.map((flow) => (
+          <OptionFlowCard key={flow.id} flow={flow} />
+        ))}
+      </div>
+
+      {/* desktop table */}
+      <div className="hidden md:block">
+        <div className="overflow-x-auto rounded-xl border border-gray-800 bg-[#14161b]">
+          <table className="min-w-full text-xs text-gray-200">
+            <thead className="bg-[#1b1e25]">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className="px-3 py-2 text-left font-semibold text-gray-300"
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className="border-t border-gray-800 hover:bg-[#1f222a]"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-3 py-2 align-middle">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* load more indicator */}
+      {initialLoaded && loading && (
+        <div className="text-center text-gray-500 mt-4 pb-8">
+          Loading more...
+        </div>
+      )}
     </div>
   );
 }

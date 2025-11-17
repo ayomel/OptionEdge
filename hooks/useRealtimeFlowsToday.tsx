@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect } from "react";
+import type { OptionFlow } from "@/components/Flow/Flow";
 
-export default function useRealtimeFlowsToday(supabase: any, setFlows: any) {
+export default function useRealtimeFlowsToday(
+  supabase: any,
+  setFlows: React.Dispatch<React.SetStateAction<OptionFlow[]>>
+) {
   useEffect(() => {
     if (!supabase) return;
 
@@ -15,9 +19,8 @@ export default function useRealtimeFlowsToday(supabase: any, setFlows: any) {
           table: "option_flows",
         },
         (payload: any) => {
-          const newFlow = payload.new;
+          const newFlow = payload.new as OptionFlow;
 
-          // Only add if it's created today
           const created = new Date(newFlow.created_at);
           const now = new Date();
           const isToday =
@@ -27,14 +30,16 @@ export default function useRealtimeFlowsToday(supabase: any, setFlows: any) {
 
           if (!isToday) return;
 
-          setFlows((prev: any[]) => {
+          setFlows((prev) => {
             if (prev.some((f) => f.id === newFlow.id)) return prev;
-            return [newFlow, ...prev]; // prepend newest
+            return [newFlow, ...prev];
           });
         }
       )
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
-  }, [supabase]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, setFlows]);
 }
