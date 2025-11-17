@@ -6,9 +6,6 @@ export default function Home() {
     <main className="p-8">
       <h1 className="text-3xl font-bold">Hello 👋</h1>
       <div className="mt-6 flex gap-3">
-        <Link href="/dashboard">
-          <Button>Dashboard</Button>
-        </Link>
         <Link href="/flow">
           <Button>Options Flow</Button>
         </Link>

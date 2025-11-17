@@ -35,14 +35,8 @@ function Header() {
           <span className="font-bold">OptionFlow</span>
         </Link>
         <nav className="hidden md:flex gap-6 text-sm text-gray-600">
-          <Link href="/dashboard" className="hover:text-indigo-600">
-            Dashboard
-          </Link>
           <Link href="/flow" className="hover:text-indigo-600">
             Flow
-          </Link>
-          <Link href="/settings" className="hover:text-indigo-600">
-            Settings
           </Link>
         </nav>
       </div>
