@@ -4,20 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import useRealtimeFlowsToday from "@/hooks/useRealtimeFlowsToday";
 import { OptionFlowCard } from "./OptionFlowCard";
-
-export type OptionFlow = {
-  id: string;
-  ticker: string;
-  type: string;
-  strike: number;
-  expiry: string;
-  total_premium: number;
-  total_size: number;
-  price: number;
-  underlying_price: number;
-  created_at: string;
-  has_sweep: boolean;
-};
+import { OptionFlow } from "@/types/Flowtypes";
 
 const FILTERS = {
   EXPIRING_SOON: "EXPIRING_SOON",
