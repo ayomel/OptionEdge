@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { OptionFlowCard } from "./OptionFlowCard";
-import { useBreakpoint } from "@/hooks/useMediaQuery";
 import { createClient } from "@supabase/supabase-js";
-import useRealtimeSubscriptionSupabase from "@/hooks/useRealtimeSubscriptionSupabase";
+import useRealtimeFlowsToday from "@/hooks/useRealtimeFlowsToday";
+import { OptionFlowCard } from "./OptionFlowCard";
 
 export type OptionFlow = {
   id: string;
@@ -26,59 +25,87 @@ const FILTERS = {
   PREMIUM_BIG: "PREMIUM_BIG",
 };
 
-export default function Flow({
-  options = [],
-  config,
-}: {
-  options?: OptionFlow[];
-  config: { supabaseUrl: string; supabaseAnonKey: string };
-}) {
-  const [flows, setFlows] = useState<OptionFlow[]>(options);
+export default function Flow() {
+  const [flows, setFlows] = useState<OptionFlow[]>([]);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const { isLG } = useBreakpoint();
+  const [page, setPage] = useState(0);
 
-  const supabase = useMemo(
-    () => createClient(config.supabaseUrl, config.supabaseAnonKey),
-    [config]
-  );
+  // 👇 Supabase client for realtime only
+  const supabase = useMemo(() => {
+    return createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+    );
+  }, []);
 
-  // debounce
+  // 🔥 Realtime updates
+  useRealtimeFlowsToday(supabase, setFlows);
+
+  // 🔥 Load today's flows from your API route
+  useEffect(() => {
+    const fetchData = async () => {
+      const size = 1500;
+      const from = page * size;
+      const to = from + size - 1;
+
+      const res = await fetch(`/api/flows/today?from=${from}&to=${to}`, {
+        cache: "no-store",
+      });
+
+      const json = await res.json();
+      if (json.success && json.data) {
+        setFlows((prev) => [...prev, ...json.data]); // append
+      }
+    };
+
+    fetchData();
+  }, [page]);
+
+  // 🔥 Auto-load more (infinite scroll)
+  useEffect(() => {
+    const onScroll = () => {
+      if (
+        window.innerHeight + window.scrollY >=
+        document.body.offsetHeight - 400
+      ) {
+        setPage((p) => p + 1);
+      }
+    };
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // 🔥 Debounce search
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(search), 300);
     return () => clearTimeout(timer);
   }, [search]);
 
-  useRealtimeSubscriptionSupabase(supabase, setFlows);
-
-  // --- TOGGLE FILTER HANDLER ---
-  const toggleFilter = (filterName: string) => {
+  // 🔥 Toggle pill filters
+  const toggleFilter = (f: string) => {
     setActiveFilters((prev) =>
-      prev.includes(filterName)
-        ? prev.filter((f) => f !== filterName)
-        : [...prev, filterName]
+      prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]
     );
   };
 
+  // 🔥 Apply search + filters
   const filtered = useMemo(() => {
     let result = [...flows];
 
-    // --- SEARCH LOGIC ---
     if (debounced.trim()) {
-      const query = debounced.toLowerCase();
-      result = result.filter((flow) => {
-        return (
-          flow.ticker.toLowerCase().includes(query) ||
-          flow.type.toLowerCase().includes(query) ||
-          String(flow.strike).includes(query) ||
-          flow.expiry.toLowerCase().includes(query) ||
-          String(flow.total_premium).includes(query)
-        );
-      });
+      const q = debounced.toLowerCase();
+      result = result.filter(
+        (flow) =>
+          flow.ticker.toLowerCase().includes(q) ||
+          flow.type.toLowerCase().includes(q) ||
+          String(flow.strike).includes(q) ||
+          flow.expiry.toLowerCase().includes(q) ||
+          String(flow.total_premium).includes(q)
+      );
     }
 
-    // --- PILL FILTERS LOGIC ---
     if (activeFilters.includes(FILTERS.EXPIRING_SOON)) {
       const today = new Date();
       const twoWeeks = new Date();
@@ -95,16 +122,15 @@ export default function Flow({
     }
 
     if (activeFilters.includes(FILTERS.PREMIUM_BIG)) {
-      result = result.filter((flow) => flow.total_premium > 500000);
+      result = result.filter((flow) => flow.total_premium > 500_000);
     }
 
     return result;
   }, [debounced, flows, activeFilters]);
 
-  // --- MOBILE VIEW ---
   return (
     <div className="p-4">
-      {/* SEARCH INPUT */}
+      {/* SEARCH */}
       <input
         type="text"
         className="w-full mb-4 px-3 py-2 rounded-lg bg-[#2a2d35] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500"
@@ -157,6 +183,8 @@ export default function Flow({
       {filtered.length === 0 && (
         <div className="text-center text-gray-400 mt-8">No results found.</div>
       )}
+
+      <div className="text-center text-gray-500 mt-4 pb-8">Loading more...</div>
     </div>
   );
 }
