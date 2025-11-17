@@ -18,7 +18,8 @@ export type OptionFlow = {
   has_sweep: boolean;
 };
 
-export default function Flow({ options = [] }: { options?: OptionFlow[] }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default function Flow({ options = [] }: { options?: OptionFlow[], config?: any }) {
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const { isLG } = useBreakpoint();

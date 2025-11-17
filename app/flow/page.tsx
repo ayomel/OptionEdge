@@ -7,15 +7,12 @@ export default async function FlowPage() {
   const { isAuthenticated } = await auth();
   if (!isAuthenticated) redirect("/sign-in");
 
-  // ✅ Server-side Supabase client for initial data
   const supabase = await createClerkSupabaseServer();
   const { data: options } = await supabase
     .from("option_flows")
     .select("*")
     .order("created_at", { ascending: false });
 
-  // ✅ Client-side Supabase credentials for real-time
-  // These env vars must start with NEXT_PUBLIC_ so they can be used in the browser
   const clientConfig = {
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
     supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
