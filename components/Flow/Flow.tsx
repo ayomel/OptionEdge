@@ -102,9 +102,8 @@ export default function Flow({
   }, [debounced, flows, activeFilters]);
 
   // --- MOBILE VIEW ---
-  return !isLG ? (
+  return (
     <div className="p-4">
-
       {/* SEARCH INPUT */}
       <input
         type="text"
@@ -159,7 +158,5 @@ export default function Flow({
         <div className="text-center text-gray-400 mt-8">No results found.</div>
       )}
     </div>
-  ) : (
-    <div>No Desktop View just yet sorry :D</div>
   );
 }
