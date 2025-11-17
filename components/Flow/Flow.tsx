@@ -5,11 +5,14 @@ import { createClient } from "@supabase/supabase-js";
 import useRealtimeFlowsToday from "@/hooks/useRealtimeFlowsToday";
 import { OptionFlowCard } from "./OptionFlowCard";
 import { OptionFlow } from "@/types/Flowtypes";
+import isETF from "@/utils/ETF";
 
 const FILTERS = {
   EXPIRING_SOON: "EXPIRING_SOON",
   SWEEPS_ONLY: "SWEEPS_ONLY",
   PREMIUM_BIG: "PREMIUM_BIG",
+  ALL_OPENING_TRADES: "ALL_OPENING_TRADES",
+  STOCK_ONLY: "STOCK_ONLY",
 };
 
 export default function Flow() {
@@ -33,7 +36,7 @@ export default function Flow() {
   // 🔥 Load today's flows from your API route
   useEffect(() => {
     const fetchData = async () => {
-      const size = 1500;
+      const size = 500;
       const from = page * size;
       const to = from + size - 1;
 
@@ -117,6 +120,16 @@ export default function Flow() {
       result = result.filter((flow) => flow.total_premium > 500_000);
     }
 
+    if (activeFilters.includes(FILTERS.ALL_OPENING_TRADES)) {
+      result
+      
+        = result.filter((flow) => flow.all_opening_trades);
+    }
+
+    if (activeFilters.includes(FILTERS.STOCK_ONLY)) {
+      result = result.filter((flow) => !isETF(flow.ticker));
+    }
+
     return result;
   }, [debounced, flows, activeFilters]);
 
@@ -164,6 +177,28 @@ export default function Flow() {
           }`}
         >
           Premium &gt; 500K
+        </button>
+
+        <button
+          onClick={() => toggleFilter(FILTERS.ALL_OPENING_TRADES)}
+          className={`px-3 py-1 rounded-full text-xs font-medium border ${
+            activeFilters.includes(FILTERS.ALL_OPENING_TRADES)
+              ? "bg-pink-600 border-pink-500 text-white"
+              : "bg-[#2a2d35] border-gray-600 text-gray-300"
+          }`}
+        >
+          All Opening Trades
+        </button>
+
+        <button
+          onClick={() => toggleFilter(FILTERS.STOCK_ONLY)}
+          className={`px-3 py-1 rounded-full text-xs font-medium border ${
+            activeFilters.includes(FILTERS.STOCK_ONLY)
+              ? "bg-pink-600 border-pink-500 text-white"
+              : "bg-[#2a2d35] border-gray-600 text-gray-300"
+          }`}
+        >
+          Stock Only
         </button>
       </div>
 

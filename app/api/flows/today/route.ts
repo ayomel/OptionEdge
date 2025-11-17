@@ -18,8 +18,8 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
 
-    const from = Number(searchParams.get("from") ?? 0);
-    const to = Number(searchParams.get("to") ?? 1499);
+    const from = Number(searchParams.get("from"));
+    const to = Number(searchParams.get("to"));
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
