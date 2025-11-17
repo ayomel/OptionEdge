@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect } from "react";
 
 function useRealtimeSubscriptionSupabase(supabase: any, setRowsData: any) {
@@ -8,7 +9,6 @@ function useRealtimeSubscriptionSupabase(supabase: any, setRowsData: any) {
         "postgres_changes",
         { event: "*", schema: "public", table: "option_flows" },
         (payload: any) => {
-          console.log("Realtime change:", payload);
           const { eventType, new: newRow, old: oldRow } = payload;
 
           setRowsData((prev: any) => {
