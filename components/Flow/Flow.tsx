@@ -94,6 +94,11 @@ export default function Flow() {
   const filtered = useMemo(() => {
     let result = [...flows];
 
+    result.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
     if (debounced.trim()) {
       const q = debounced.toLowerCase();
       result = result.filter(
