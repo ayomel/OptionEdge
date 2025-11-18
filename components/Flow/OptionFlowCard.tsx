@@ -1,8 +1,13 @@
+import React from "react";
 import { formatDate } from "@/utils/timeUtils/formatDate";
 import { formatPremium } from "@/utils/numberUtils/formatPremium";
 import { OptionFlow } from "@/types/Flowtypes";
 
-export function OptionFlowCard({ flow }: { flow: OptionFlow }) {
+export const OptionFlowCard = React.memo(function OptionFlowCard({
+  flow,
+}: {
+  flow: OptionFlow;
+}) {
   const isCall = flow.type?.toLowerCase() === "call";
   const premium = formatPremium(flow.total_premium);
 
@@ -72,4 +77,4 @@ export function OptionFlowCard({ flow }: { flow: OptionFlow }) {
       </div>
     </div>
   );
-}
+});
