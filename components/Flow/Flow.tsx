@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { createClient } from "@supabase/supabase-js";
 import useRealtimeFlowsToday from "@/hooks/useRealtimeFlowsToday";
 import { OptionFlowCard } from "./OptionFlowCard";
@@ -142,13 +141,6 @@ export default function Flow() {
 
   const listRef = React.useRef<HTMLDivElement>(null);
 
-  const virtualizer = useWindowVirtualizer({
-    count: filtered.length,
-    estimateSize: () => 180, // Approximate height of a card including margin
-    scrollMargin: listRef.current?.offsetTop ?? 0,
-    overscan: 5,
-  });
-
   return (
     <div className="p-4">
       {/* SEARCH */}
@@ -228,28 +220,9 @@ export default function Flow() {
         </button>
       </div>
 
-      {/* RESULTS */}
-      <div ref={listRef} style={{ position: "relative", height: `${virtualizer.getTotalSize() - 3300}px` }}>
-        {virtualizer.getVirtualItems().map((virtualItem) => {
-          const flow = filtered[virtualItem.index];
-          return (
-            <div
-              key={flow.id}
-              data-index={virtualItem.index}
-              ref={virtualizer.measureElement}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                transform: `translateY(${virtualItem.start}px)`,
-              }}
-            >
-              <OptionFlowCard flow={flow} />
-            </div>
-          );
-        })}
-      </div>
+      {filtered.map((flow) => (
+        <OptionFlowCard key={flow.id} flow={flow} />
+      ))}
 
       {filtered.length === 0 && (
         <div className="text-center text-gray-400 mt-8">No results found.</div>
