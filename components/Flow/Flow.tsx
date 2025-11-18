@@ -140,8 +140,6 @@ export default function Flow() {
     return result;
   }, [debounced, flows, activeFilters]);
 
-  console.log(flows);
-
   const listRef = React.useRef<HTMLDivElement>(null);
 
   const virtualizer = useWindowVirtualizer({
@@ -231,7 +229,7 @@ export default function Flow() {
       </div>
 
       {/* RESULTS */}
-      <div ref={listRef} style={{ position: "relative", height: `${virtualizer.getTotalSize()}px` }}>
+      <div ref={listRef} style={{ position: "relative", height: `${virtualizer.getTotalSize() - 3300}px` }}>
         {virtualizer.getVirtualItems().map((virtualItem) => {
           const flow = filtered[virtualItem.index];
           return (
