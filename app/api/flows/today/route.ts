@@ -1,17 +1,25 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-function getLocalDayRange() {
-  const tzOffset = new Date().getTimezoneOffset() * 60000;
-  const localNow = new Date(Date.now() - tzOffset);
+function getNYDayRange() {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const todayStr = formatter.format(now); // YYYY-MM-DD
 
-  const today = localNow.toISOString().split("T")[0];
+  // Create dates from the string to ensure we get the correct ISO string for the query
+  // We just need the YYYY-MM-DD string for the Supabase query as it defaults to 00:00 UTC
+  // But to be safe and consistent with the logic of "next day", let's calculate tomorrow's date string
+  const todayDate = new Date(todayStr);
+  const tomorrowDate = new Date(todayDate);
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrowStr = tomorrowDate.toISOString().split("T")[0];
 
-  const tomorrow = new Date(localNow);
-  tomorrow.setDate(localNow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split("T")[0];
-
-  return { today, tomorrow: tomorrowStr };
+  return { today: todayStr, tomorrow: tomorrowStr };
 }
 
 export async function GET(req: Request) {
@@ -25,7 +33,7 @@ export async function GET(req: Request) {
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { today, tomorrow } = getLocalDayRange();
+    const { today, tomorrow } = getNYDayRange();
 
     const { data, error } = await supabase
       .from("option_flows")

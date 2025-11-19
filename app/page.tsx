@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#0d1117] text-white flex flex-col items-center">
-      {/* Hero Section */}
       <section className="flex flex-col items-center text-center w-full max-w-3xl px-4 sm:px-6 mt-20 sm:mt-28">
         <h1 className="text-3xl sm:text-6xl font-extrabold leading-tight">
           Real-Time Options Flow,
@@ -16,7 +15,6 @@ export default function Home() {
           actionable insights — all in one clean dashboard.
         </p>
 
-        {/* CTA Buttons */}
         <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
           <Link href="/flow" className="w-full sm:w-auto">
             <Button className="w-full text-base sm:text-lg py-4 sm:py-6">
@@ -35,7 +33,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Feature Highlights */}
       <section className="mt-20 sm:mt-32 grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10 px-4 sm:px-6 max-w-5xl w-full mb-20">
         <div className="bg-[#161b22] p-5 sm:p-6 rounded-xl shadow-lg border border-gray-800">
           <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">

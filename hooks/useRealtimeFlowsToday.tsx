@@ -17,13 +17,20 @@ export default function useRealtimeFlowsToday(supabase: any, setFlows: any) {
         (payload: any) => {
           const newFlow = payload.new;
 
-          // Only add if it's created today
-          const created = new Date(newFlow.created_at);
-          const now = new Date();
-          const isToday =
-            created.getFullYear() === now.getFullYear() &&
-            created.getMonth() === now.getMonth() &&
-            created.getDate() === now.getDate();
+          // Only add if it's created today (in NY time)
+          const getNYDateString = (date: Date) => {
+            return new Intl.DateTimeFormat("en-CA", {
+              timeZone: "America/New_York",
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            }).format(date);
+          };
+
+          const createdDateNY = getNYDateString(new Date(newFlow.created_at));
+          const todayNY = getNYDateString(new Date());
+          
+          const isToday = createdDateNY === todayNY;
 
           if (!isToday) return;
 
