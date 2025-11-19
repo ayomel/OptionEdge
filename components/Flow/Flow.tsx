@@ -8,7 +8,7 @@ import FlowFilters from "./FlowFilters";
 import FlowList from "./FlowList";
 
 export default function Flow() {
-  const { flows, isLoading } = useFlowData();
+  const { flows, isLoading, hasMore } = useFlowData();
   const {
     search,
     setSearch,
@@ -26,7 +26,7 @@ export default function Flow() {
         toggleFilter={toggleFilter} 
       />
 
-      <FlowList flows={filteredFlows} isLoading={isLoading} />
+      <FlowList flows={filteredFlows} isLoading={isLoading} hasMore={hasMore} />
     </div>
   );
 }

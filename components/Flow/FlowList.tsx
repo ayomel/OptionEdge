@@ -5,9 +5,10 @@ import { OptionFlowCard } from "./OptionFlowCard";
 interface FlowListProps {
   flows: OptionFlow[];
   isLoading: boolean;
+  hasMore: boolean;
 }
 
-export default function FlowList({ flows, isLoading }: FlowListProps) {
+export default function FlowList({ flows, isLoading, hasMore }: FlowListProps) {
   return (
     <>
       {flows.map((flow) => (
@@ -19,7 +20,7 @@ export default function FlowList({ flows, isLoading }: FlowListProps) {
       )}
 
       <div className="text-center text-gray-500 mt-4 pb-8">
-        {isLoading ? "Loading..." : "Loading more..."}
+        {isLoading ? "Loading..." : hasMore ? "Scroll to load more flows" : "No more flows to load"}
       </div>
     </>
   );
