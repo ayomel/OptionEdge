@@ -6,6 +6,7 @@ import useRealtimeFlowsToday from "@/hooks/useRealtimeFlowsToday";
 import { OptionFlowCard } from "./OptionFlowCard";
 import { OptionFlow } from "@/types/Flowtypes";
 import isETF from "@/utils/ETF";
+import FilterButton from "./FilterButton";
 
 const FILTERS = {
   EXPIRING_SOON: "EXPIRING_SOON",
@@ -154,70 +155,47 @@ export default function Flow() {
 
       {/* PILL FILTERS */}
       <div className="flex flex-wrap gap-2 mb-4">
-        <button
-          onClick={() => toggleFilter(FILTERS.EXPIRING_SOON)}
-          className={`px-3 py-1 rounded-full text-xs font-medium border ${
-            activeFilters.includes(FILTERS.EXPIRING_SOON)
-              ? "bg-pink-600 border-pink-500 text-white"
-              : "bg-[#2a2d35] border-gray-600 text-gray-300"
-          }`}
-        >
-          Expiring Soon
-        </button>
+        <FilterButton
+          filter={FILTERS.EXPIRING_SOON}
+          activeFilters={activeFilters}
+          toggleFilter={toggleFilter}
+          label="Expiring Soon"
+        />
 
-        <button
-          onClick={() => toggleFilter(FILTERS.SWEEPS_ONLY)}
-          className={`px-3 py-1 rounded-full text-xs font-medium border ${
-            activeFilters.includes(FILTERS.SWEEPS_ONLY)
-              ? "bg-pink-600 border-pink-500 text-white"
-              : "bg-[#2a2d35] border-gray-600 text-gray-300"
-          }`}
-        >
-          Sweeps Only
-        </button>
+        <FilterButton
+          filter={FILTERS.SWEEPS_ONLY}
+          activeFilters={activeFilters}
+          toggleFilter={toggleFilter}
+          label="Sweeps Only"
+        />
 
-        <button
-          onClick={() => toggleFilter(FILTERS.PREMIUM_BIG)}
-          className={`px-3 py-1 rounded-full text-xs font-medium border ${
-            activeFilters.includes(FILTERS.PREMIUM_BIG)
-              ? "bg-pink-600 border-pink-500 text-white"
-              : "bg-[#2a2d35] border-gray-600 text-gray-300"
-          }`}
-        >
-          Premium &gt; 500K
-        </button>
+        <FilterButton
+          filter={FILTERS.PREMIUM_BIG}
+          activeFilters={activeFilters}
+          toggleFilter={toggleFilter}
+          label="Premium &gt; 500K"
+        />
 
-        <button
-          onClick={() => toggleFilter(FILTERS.ALL_OPENING_TRADES)}
-          className={`px-3 py-1 rounded-full text-xs font-medium border ${
-            activeFilters.includes(FILTERS.ALL_OPENING_TRADES)
-              ? "bg-pink-600 border-pink-500 text-white"
-              : "bg-[#2a2d35] border-gray-600 text-gray-300"
-          }`}
-        >
-          All Opening Trades
-        </button>
+        <FilterButton
+          filter={FILTERS.ALL_OPENING_TRADES}
+          activeFilters={activeFilters}
+          toggleFilter={toggleFilter}
+          label="All Opening Trades"
+        />
 
-        <button
-          onClick={() => toggleFilter(FILTERS.STOCK_ONLY)}
-          className={`px-3 py-1 rounded-full text-xs font-medium border ${
-            activeFilters.includes(FILTERS.STOCK_ONLY)
-              ? "bg-pink-600 border-pink-500 text-white"
-              : "bg-[#2a2d35] border-gray-600 text-gray-300"
-          }`}
-        >
-          Stock Only
-        </button>
-        <button
-          onClick={() => toggleFilter(FILTERS.ABOVE_ASK)}
-          className={`px-3 py-1 rounded-full text-xs font-medium border ${
-            activeFilters.includes(FILTERS.ABOVE_ASK)
-              ? "bg-pink-600 border-pink-500 text-white"
-              : "bg-[#2a2d35] border-gray-600 text-gray-300"
-          }`}
-        >
-          Above Ask
-        </button>
+        <FilterButton
+          filter={FILTERS.STOCK_ONLY}
+          activeFilters={activeFilters}
+          toggleFilter={toggleFilter}
+          label="Stock Only"
+        />
+
+        <FilterButton
+          filter={FILTERS.ABOVE_ASK}
+          activeFilters={activeFilters}
+          toggleFilter={toggleFilter}
+          label="Above Ask"
+        />
       </div>
 
       {filtered.map((flow) => (
