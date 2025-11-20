@@ -11,12 +11,32 @@ export const FILTERS = {
   ABOVE_ASK: "ABOVE_ASK",
 };
 
+const STORAGE_KEY = "activeFlowFilters";
+
 export function useFlowFilters(flows: OptionFlow[]) {
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
+
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
-  // 🔥 Debounce search
+  // 🔥 Load filters from localStorage (only once)
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        setActiveFilters(JSON.parse(saved));
+      } catch {
+        console.error("invalid JSON in filter storage");
+      }
+    }
+  }, []);
+
+  // 🔥 Save filters when they change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(activeFilters));
+  }, [activeFilters]);
+
+  // 🔥 Debounce search (keep this)
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(search), 300);
     return () => clearTimeout(timer);
@@ -33,11 +53,13 @@ export function useFlowFilters(flows: OptionFlow[]) {
   const filteredFlows = useMemo(() => {
     let result = [...flows];
 
+    // newest first
     result.sort(
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
+    // 🔍 Search
     if (debounced.trim()) {
       const q = debounced.toLowerCase();
       result = result.filter(
@@ -50,6 +72,7 @@ export function useFlowFilters(flows: OptionFlow[]) {
       );
     }
 
+    // 🎯 Filters
     if (activeFilters.includes(FILTERS.EXPIRING_SOON)) {
       const today = new Date();
       const twoWeeks = new Date();
