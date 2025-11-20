@@ -5,43 +5,63 @@ export default function useRealtimeFlowsToday(supabase: any, setFlows: any) {
   useEffect(() => {
     if (!supabase) return;
 
-    const channel = supabase
-      .channel("option_flows-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "option_flows",
-        },
-        (payload: any) => {
-          const newFlow = payload.new;
+    const channel = supabase.channel("option_flows-realtime", {
+      config: {
+        presence: { key: "flows" },
+        broadcast: { ack: true },
+        retry: 10, // try reconnecting up to 10 times
+      },
+    });
 
-          // Only add if it's created today (in NY time)
-          const getNYDateString = (date: Date) => {
-            return new Intl.DateTimeFormat("en-CA", {
-              timeZone: "America/New_York",
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-            }).format(date);
-          };
+    channel.on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "option_flows",
+      },
+      (payload: any) => {
+        const newFlow = payload.new;
 
-          const createdDateNY = getNYDateString(new Date(newFlow.created_at));
-          const todayNY = getNYDateString(new Date());
-          
-          const isToday = createdDateNY === todayNY;
+        const getNYDateString = (date: Date) => {
+          return new Intl.DateTimeFormat("en-CA", {
+            timeZone: "America/New_York",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }).format(date);
+        };
 
-          if (!isToday) return;
+        const createdDateNY = getNYDateString(new Date(newFlow.created_at));
+        const todayNY = getNYDateString(new Date());
+        const isToday = createdDateNY === todayNY;
 
-          setFlows((prev: any[]) => {
-            if (prev.some((f) => f.id === newFlow.id)) return prev;
-            return [newFlow, ...prev]; // prepend newest
-          });
-        }
-      )
-      .subscribe();
+        if (!isToday) return;
 
-    return () => supabase.removeChannel(channel);
+        setFlows((prev: any[]) => {
+          if (prev.some((f) => f.id === newFlow.id)) return prev;
+          return [newFlow, ...prev];
+        });
+      }
+    );
+
+    channel.subscribe((status: string) => {
+      if (status === "SUBSCRIBED") {
+        console.log("Realtime connected ✔️");
+      }
+      if (status === "TIMED_OUT") {
+        console.warn("Realtime timeout, retrying…");
+      }
+      if (status === "CLOSED") {
+        console.warn("Realtime connection closed, will retry…");
+      }
+      if (status === "CHANNEL_ERROR") {
+        console.error("Realtime channel error");
+      }
+    });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [supabase]);
 }
