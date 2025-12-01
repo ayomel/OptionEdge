@@ -28,12 +28,18 @@ function Header() {
           <span className="font-bold">OptionFlow</span>
         </Link>
 
-        <nav className="hidden md:flex gap-6 text-sm text-gray-600 dark:text-gray-400">
+        <nav className="flex gap-6 text-sm text-gray-600 dark:text-gray-400">
           <Link
             href="/flow"
             className="hover:text-indigo-600 dark:hover:text-indigo-400"
           >
             Flow
+          </Link>
+          <Link
+            href="/darkPool"
+            className="hover:text-indigo-600 dark:hover:text-indigo-400"
+          >
+            Dark Pool
           </Link>
         </nav>
       </div>

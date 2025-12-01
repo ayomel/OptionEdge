@@ -21,6 +21,6 @@ export function useFlows(page: number) {
     // optional: keep previous result while loading new page
     placeholderData: (previousData) => previousData,
 
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 }
